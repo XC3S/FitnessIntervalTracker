@@ -1,5 +1,7 @@
 import './App.css';
 import React from 'react';
+import audio from './sounds/440.mp3';
+import audio_hight from './sounds/760.mp3';
 
 class App extends React.Component {
 
@@ -7,7 +9,7 @@ class App extends React.Component {
     name: 'Training',
     duration: 30,
     restDuration: 10,
-    rounds: 3
+    rounds: 1000
   }];
 
   constructor(props) {
@@ -18,7 +20,8 @@ class App extends React.Component {
       nextTimeStamp: null,
       resting: false,
       currentRound: 0,
-      displayTime: ''
+      displayTime: '',
+      beepStage: 0
     };
 
     this.tick();
@@ -29,13 +32,17 @@ class App extends React.Component {
 
     if(!running){
       return <>
-        <button onClick={() => this.start()}>start</button>
+        <button className='start-btn' onClick={() => this.start()}>Start</button>
       </>;
     }
     else {
       return <>
-        <h2>{ currentName }</h2>
-        <p>{this.timerDiff(nextTimeStamp)}</p>
+        <div className='training'>
+          <h2 className='title'>{ currentName }</h2>
+          <p className='time'>{this.timerDiff(nextTimeStamp)}</p>
+          <h4 className='set'>Set: {currentRound + 1}</h4>
+        </div>
+        <button className='stop-btn' onClick={ () => this.stop()}>Stop</button>
       </>;
     }
   }
@@ -52,8 +59,59 @@ class App extends React.Component {
       this.setState({
         displayTime: diff
       });
+
+      // first beep
+      if(diff == 3 && this.state.beepStage == 0 && this.state.resting){
+        this.playAudio();
+        this.setState({
+          beepStage: 1
+        });
+      }
+
+      // second beep
+      if(diff == 2 && this.state.beepStage == 1 && this.state.resting){
+        this.playAudio();
+        this.setState({
+          beepStage: 2
+        });
+      }
+
+      // third beep
+      if(diff == 1 && this.state.beepStage == 2 && this.state.resting){
+        this.playAudio();
+        this.setState({
+          beepStage: 3
+        });
+      }
+
+      // final beep
+      if(diff == 0 && this.state.beepStage == 3 && this.state.resting){
+        this.playAudioHight();
+        this.setState({
+          beepStage: 4
+        });
+      }      
+
+      // end training beep
+      if(diff == 0 && this.state.beepStage == 4 && !this.state.resting){
+        this.playAudio();
+        this.setState({
+          beepStage: 0
+        });
+      }      
+
+
+
     }
     requestAnimationFrame(() => this.tick());
+  }
+
+  playAudio = () => {
+    new Audio(audio).play();
+  }
+
+  playAudioHight = () => {
+    new Audio(audio_hight).play();
   }
 
   next(){
@@ -63,14 +121,16 @@ class App extends React.Component {
     if(resting){
       this.setState({
         currentName: interval.name,
-        nextTimeStamp: Date.now() + interval.duration * 1000,
+        nextTimeStamp: Date.now() + interval.duration * 1000 + 500,
         resting: false
       });
     }
     else if(currentRound < interval.rounds - 1){
+      const name = currentRound < 0 ? 'Ready?' : 'Rest';
+
       this.setState({
-        currentName: 'Rest',
-        nextTimeStamp: Date.now() + interval.restDuration * 1000,
+        currentName: name,
+        nextTimeStamp: Date.now() + interval.restDuration * 1000 + 500,
         resting: true,
         currentRound: currentRound + 1
       });
@@ -82,14 +142,18 @@ class App extends React.Component {
     }
   }
 
-  start() {
-    const interval = this.intervals[0]
+  stop(){
+    this.setState({
+      running: false
+    });
+  }
 
+  start() {
     this.setState({
       running: true,
-      currentName: interval.name,
-      nextTimeStamp: Date.now() + interval.duration * 1000,
-      currentRound: 0
+      currentName: '',
+      nextTimeStamp: Date.now(),
+      currentRound: -1
     });
   }
 

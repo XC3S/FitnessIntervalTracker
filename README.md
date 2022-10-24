@@ -17,6 +17,7 @@ You may also see any lint errors in the console.
 
 # Deploying to GitHub Pages
 
-run `npm run build` and commit the generted artefacts in the build folder
+run `npm run build` and move the generted artefacts from the `build` to the `docs` folder
+(docs because its one of the limited options for GitHub Pages)
 
 
